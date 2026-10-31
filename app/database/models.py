@@ -6,9 +6,9 @@ from sqlalchemy import (
     Boolean,
 )
 
-if __package__:
+try:
     from .db import Base
-else:
+except ImportError:
     from db import Base
 
 
@@ -17,7 +17,14 @@ class Game(Base):
 
     id = Column(Integer, primary_key=True)
 
+    #added external_game_id column to store the unique identifier for each game
+    external_game_id = Column(String, unique=True)
+
     game_date = Column(Date)
+
+    season = Column(Integer)
+
+    week = Column(Integer)
 
     home_team = Column(String)
 
