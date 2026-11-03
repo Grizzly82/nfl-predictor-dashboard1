@@ -1,9 +1,83 @@
-from sqlalchemy import func
+import pandas as pd
 
 from app.database.models import Game
 
-#Top scoring teams based on total points scored in the season
+
+def total_games(db):
+    """
+    Total games in database.
+    """
+    return db.query(Game).count()
+
+
+def total_teams(db):
+    """
+    Count unique teams.
+    """
+
+    games = db.query(Game).all()
+
+    teams = set()
+
+    for game in games:
+        teams.add(game.home_team)
+        teams.add(game.away_team)
+
+    return len(teams)
+
+
+def average_points_per_game(db):
+    """
+    Average combined points
+    scored per game.
+    """
+
+    games = db.query(Game).all()
+
+    if not games:
+        return 0
+
+    total_points = sum(
+        game.home_score + game.away_score
+        for game in games
+    )
+
+    return round(
+        total_points / len(games),
+        1,
+    )
+
+
+def home_field_advantage(db):
+    """
+    Home team win percentage.
+    """
+
+    games = db.query(Game).all()
+
+    if not games:
+        return 0
+
+    home_wins = sum(
+        1
+        for game in games
+        if game.home_win
+    )
+
+    percentage = (
+        home_wins / len(games)
+    ) * 100
+
+    return round(
+        percentage,
+        1,
+    )
+
+
 def top_scoring_teams(db):
+    """
+    Teams sorted by total points scored.
+    """
 
     games = db.query(Game).all()
 
@@ -12,23 +86,49 @@ def top_scoring_teams(db):
     for game in games:
 
         team_points[game.home_team] = (
-            team_points.get(game.home_team, 0)
+            team_points.get(
+                game.home_team,
+                0
+            )
             + game.home_score
         )
 
         team_points[game.away_team] = (
-            team_points.get(game.away_team, 0)
+            team_points.get(
+                game.away_team,
+                0
+            )
             + game.away_score
         )
 
     return sorted(
         team_points.items(),
         key=lambda x: x[1],
-        reverse=True
+        reverse=True,
     )
 
-#Team win percentages based on total wins and total games played
+
+def top_scoring_dataframe(db):
+    """
+    DataFrame for Plotly charts.
+    """
+
+    results = top_scoring_teams(db)[:10]
+
+    return pd.DataFrame(
+        results,
+        columns=[
+            "team",
+            "points",
+        ],
+    )
+
+
 def team_win_percentages(db):
+    """
+    Calculate win percentage
+    of every team.
+    """
 
     games = db.query(Game).all()
 
@@ -40,10 +140,16 @@ def team_win_percentages(db):
         away = game.away_team
 
         if home not in stats:
-            stats[home] = {"wins": 0, "games": 0}
+            stats[home] = {
+                "wins": 0,
+                "games": 0
+            }
 
         if away not in stats:
-            stats[away] = {"wins": 0, "games": 0}
+            stats[away] = {
+                "wins": 0,
+                "games": 0
+            }
 
         stats[home]["games"] += 1
         stats[away]["games"] += 1
@@ -57,78 +163,177 @@ def team_win_percentages(db):
 
     for team, values in stats.items():
 
-        pct = values["wins"] / values["games"]
+        pct = (
+            values["wins"]
+            / values["games"]
+        ) * 100
 
         results.append(
             (
                 team,
-                round(pct, 3)
+                round(
+                    pct,
+                    1,
+                ),
             )
         )
 
     return sorted(
         results,
         key=lambda x: x[1],
-        reverse=True
+        reverse=True,
     )
 
-#Home field advantage based on home team wins
-def home_field_advantage(db):
 
-    games = db.query(Game).all()
+def team_win_percentage_dataframe(db):
+    """
+    DataFrame version of
+    team win percentages.
+    """
 
-    total_games = len(games)
+    results = team_win_percentages(db)
 
-    home_wins = sum(
-        1
-        for game in games
-        if game.home_win
+    return pd.DataFrame(
+        results,
+        columns=[
+            "team",
+            "win_percentage",
+        ]
     )
 
-    pct = (
-        home_wins
-        / total_games
-    ) * 100
+from app.services.team_stats_service import (
+    build_team_stats,
+)
 
-    return round(pct, 2)
 
 def get_team_summary(
     db,
-    team_name
+    team_name,
 ):
+
+    stats = build_team_stats(db)
+
+    if team_name not in stats:
+        return None
+
+    team = stats[team_name]
+
+    games = team["games"]
+
+    ppg = (
+        team["points_for"]
+        / games
+    )
+
+    papg = (
+        team["points_against"]
+        / games
+    )
+
+    return {
+        "team": team_name,
+        "wins": team["wins"],
+        "losses": team["losses"],
+        "games_played": games,
+        "win_pct": round(
+            team["wins"] / games * 100,
+            1,
+        ),
+        "ppg": round(ppg, 1),
+        "papg": round(papg, 1),
+        "point_diff": round(
+            ppg - papg,
+            1,
+        ),
+    }
+
+def get_all_teams(db):
+    """
+    Teams for dropdowns.
+    """
+
+    games = (
+    db.query(Game)
+    .filter(
+        (Game.home_team == team_name)
+        |
+        (Game.away_team == team_name)
+    )
+    .order_by(Game.game_date)
+    .all()
+)
+
+    teams = set()
+
+    for game in games:
+        teams.add(game.home_team)
+        teams.add(game.away_team)
+
+    return sorted(list(teams))
+
+def get_team_game_history(
+    db,
+    team_name,
+):
+    """
+    Historical scoring trend.
+    """
 
     games = db.query(Game).all()
 
-    points_for = 0
-    points_against = 0
-    games_played = 0
+    history = []
 
     for game in games:
 
         if game.home_team == team_name:
 
-            points_for += game.home_score
-
-            points_against += game.away_score
-
-            games_played += 1
+            history.append(
+                {
+                    "date": game.game_date,
+                    "points": game.home_score,
+                }
+            )
 
         elif game.away_team == team_name:
 
-            points_for += game.away_score
+            history.append(
+                {
+                    "date": game.game_date,
+                    "points": game.away_score,
+                }
+            )
 
-            points_against += game.home_score
+    df = pd.DataFrame(
+        history
+    )
 
-            games_played += 1
+    if not df.empty:
+        df = df.sort_values(
+            by="date"
+        )
+
+    return df
+
+def compare_teams(
+    db,
+    team_a,
+    team_b,
+):
+    """
+    Compare two teams.
+    """
+
+    team_a_stats = get_team_summary(
+        db,
+        team_a,
+    )
+
+    team_b_stats = get_team_summary(
+        db,
+        team_b,
+    )
 
     return {
-        "team": team_name,
-        "ppg": round(
-            points_for / games_played,
-            2
-        ),
-        "papg": round(
-            points_against / games_played,
-            2
-        ),
+        "team_a": team_a_stats,
+        "team_b": team_b_stats,
     }

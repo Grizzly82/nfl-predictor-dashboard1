@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.15"
 dependencies = [
     "dash>=4.4.1",
+    "dash-bootstrap-components>=2.0.4",
     "fastapi>=0.162.0",
     "numpy>=2.5.4",
     "pandas>=3.1.0",
@@ -20,6 +21,7 @@ dependencies = [
     "scikit-learn>=1.9.1",
     "sqlalchemy>=2.1.6",
     "uvicorn>=0.54.0",
+    "xgboost>=3.4.1",
 ]
 
 [project.scripts]

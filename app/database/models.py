@@ -1,3 +1,4 @@
+from sqlalchemy import Index
 from sqlalchemy import (
     Column,
     Integer,
@@ -26,12 +27,38 @@ class Game(Base):
 
     week = Column(Integer)
 
-    home_team = Column(String)
+    home_team = Column(
+    String,
+    index=True,
+    )
 
-    away_team = Column(String)
+    away_team = Column(
+        String,
+        index=True,
+    )
 
+
+    game_date = Column(
+        Date,
+        index=True,
+    )
+
+    season = Column(
+    Integer,
+    index=True,
+)
     home_score = Column(Integer)
 
     away_score = Column(Integer)
 
     home_win = Column(Boolean)
+
+    __table_args__ = (
+
+    Index(
+        "idx_season_week",
+        "season",
+        "week",
+    ),
+
+)
