@@ -234,6 +234,18 @@ layout = dbc.Container(
                     dbc.Card(
                         dbc.CardBody(
                             [
+                                html.H6("Ties"),
+                                html.H3(id="team-ties"),
+                            ]
+                        )
+                    ),
+                    md=2,
+                ),
+
+                dbc.Col(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [
                                 html.H6("PPG"),
                                 html.H3(id="team-ppg"),
                             ]

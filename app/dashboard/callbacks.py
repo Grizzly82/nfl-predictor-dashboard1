@@ -207,6 +207,10 @@ def register_callbacks(app):
                 "children",
             ),
             Output(
+                "team-ties",
+                "children",
+            ),
+            Output(
                 "team-ppg",
                 "children",
             ),
@@ -227,7 +231,7 @@ def register_callbacks(app):
     def update_team_cards(team):
 
         if not team:
-            return "-", "-", "-", "-", "-"
+            return "-", "-", "-", "-", "-", "-"
 
         db = SessionLocal()
 
@@ -243,6 +247,7 @@ def register_callbacks(app):
             return (
                 summary["wins"],
                 summary["losses"],
+                summary["ties"],
                 summary["ppg"],
                 summary["papg"],
                 summary["win_pct"],
@@ -362,6 +367,11 @@ def register_callbacks(app):
                                 html.Td("Losses"),
                                 html.Td(a["losses"]),
                                 html.Td(b["losses"]),
+                            ]),
+                            html.Tr([
+                                html.Td("Ties"),
+                                html.Td(a["ties"]),
+                                html.Td(b["ties"]),
                             ]),
                             html.Tr([
                                 html.Td("PPG"),

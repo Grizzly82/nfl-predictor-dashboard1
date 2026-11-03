@@ -11,6 +11,7 @@ def build_team_stats(db):
         lambda: {
             "wins": 0,
             "losses": 0,
+            "ties": 0,
             "games": 0,
             "points_for": 0,
             "points_against": 0,
@@ -41,13 +42,17 @@ def build_team_stats(db):
             game.home_score
         )
 
-        if game.home_win:
+        is_tie = getattr(game, "game_tie", False)
+        if is_tie is None:
+            is_tie = game.home_score == game.away_score
 
+        if is_tie:
+            stats[home]["ties"] += 1
+            stats[away]["ties"] += 1
+        elif game.home_win:
             stats[home]["wins"] += 1
             stats[away]["losses"] += 1
-
         else:
-
             stats[away]["wins"] += 1
             stats[home]["losses"] += 1
 

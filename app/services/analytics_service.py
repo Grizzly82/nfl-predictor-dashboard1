@@ -59,14 +59,24 @@ def home_field_advantage(db):
     if not games:
         return 0
 
+    non_ties = [
+        game
+        for game in games
+        if not getattr(game, "game_tie", False)
+        and game.home_score != game.away_score
+    ]
+
+    if not non_ties:
+        return 0
+
     home_wins = sum(
         1
-        for game in games
+        for game in non_ties
         if game.home_win
     )
 
     percentage = (
-        home_wins / len(games)
+        home_wins / len(non_ties)
     ) * 100
 
     return round(
@@ -143,19 +153,28 @@ def team_win_percentages(db):
         if home not in stats:
             stats[home] = {
                 "wins": 0,
+                "ties": 0,
                 "games": 0
             }
 
         if away not in stats:
             stats[away] = {
                 "wins": 0,
+                "ties": 0,
                 "games": 0
             }
 
         stats[home]["games"] += 1
         stats[away]["games"] += 1
 
-        if game.home_win:
+        is_tie = getattr(game, "game_tie", False)
+        if is_tie is None:
+            is_tie = game.home_score == game.away_score
+
+        if is_tie:
+            stats[home]["ties"] += 1
+            stats[away]["ties"] += 1
+        elif game.home_win:
             stats[home]["wins"] += 1
         else:
             stats[away]["wins"] += 1
@@ -165,7 +184,7 @@ def team_win_percentages(db):
     for team, values in stats.items():
 
         pct = (
-            values["wins"]
+            (values["wins"] + values["ties"] * 0.5)
             / values["games"]
         ) * 100
 
@@ -215,31 +234,41 @@ def get_team_summary(
     stats = build_team_stats(db)
 
     if team_name not in stats:
-        return None
+        return {
+            "team": team_name,
+            "wins": 0,
+            "losses": 0,
+            "ties": 0,
+            "games_played": 0,
+            "win_pct": 0.0,
+            "ppg": 0.0,
+            "papg": 0.0,
+            "point_diff": 0.0,
+        }
 
     team = stats[team_name]
 
     games = team["games"]
 
-    ppg = (
-        team["points_for"]
-        / games
-    )
-
-    papg = (
-        team["points_against"]
-        / games
-    )
+    if games == 0:
+        ppg = 0.0
+        papg = 0.0
+        win_pct = 0.0
+    else:
+        ppg = team["points_for"] / games
+        papg = team["points_against"] / games
+        win_pct = round(
+            (team["wins"] + team["ties"] * 0.5) / games * 100,
+            1,
+        )
 
     return {
         "team": team_name,
         "wins": team["wins"],
         "losses": team["losses"],
+        "ties": team["ties"],
         "games_played": games,
-        "win_pct": round(
-            team["wins"] / games * 100,
-            1,
-        ),
+        "win_pct": win_pct,
         "ppg": round(ppg, 1),
         "papg": round(papg, 1),
         "point_diff": round(

@@ -17,6 +17,13 @@ def build_training_dataframe(db):
 
     for game in games:
 
+        is_tie = getattr(game, "game_tie", False)
+        if is_tie is None:
+            is_tie = game.home_score == game.away_score
+
+        if is_tie:
+            continue
+
         home_team = game.home_team
         away_team = game.away_team
 

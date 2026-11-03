@@ -20,25 +20,30 @@ except ImportError:
 def ingest_games():
 
     db = SessionLocal()
-
-    data = get_scoreboard()
-
     inserted = 0
 
-    for event in data["events"]:
+    try:
+        season = 2026
 
-        game = transform_game(event)
+        for week in range(1, 9):
+            data = get_scoreboard(season=season, week=week)
 
-        if not game_exists(
-            db,
-            game["external_game_id"]
-        ):
-            insert_game(db, game)
-            inserted += 1
+            for event in data.get("events", []):
+                competition = event["competitions"][0]
+                status = competition.get("status", {}).get("type", {})
 
-    db.close()
+                if not status.get("completed"):
+                    continue
 
-    print(f"{inserted} games inserted")
+                game = transform_game(event, season=season, week=week)
+
+                if not game_exists(db, game["external_game_id"]):
+                    insert_game(db, game)
+                    inserted += 1
+
+        print(f"{inserted} games inserted")
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":

@@ -41,6 +41,13 @@ def get_recent_form(
 
     for game in recent_games:
 
+        is_tie = getattr(game, "game_tie", False)
+        if is_tie is None:
+            is_tie = game.home_score == game.away_score
+
+        if is_tie:
+            continue
+
         if (
             game.home_team == team_name
             and game.home_win
@@ -50,6 +57,7 @@ def get_recent_form(
         elif (
             game.away_team == team_name
             and not game.home_win
+            and not getattr(game, "game_tie", False)
         ):
             wins += 1
 
@@ -95,8 +103,16 @@ def get_win_streak(
         elif (
             game.away_team == team_name
             and not game.home_win
+            and not getattr(game, "game_tie", False)
         ):
             won = True
+
+        is_tie = getattr(game, "game_tie", False)
+        if is_tie is None:
+            is_tie = game.home_score == game.away_score
+
+        if is_tie:
+            break
 
         if won:
             streak += 1

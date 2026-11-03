@@ -37,7 +37,7 @@ def train_model():
             db
         )
 
-        if df.empty:
+        if df.empty or len(df) < 10:
             print("Not enough game history to train a model yet.")
             return
 
@@ -66,7 +66,7 @@ def train_model():
             random_state=42,
         )
 
-        model = LogisticRegression()
+        model = LogisticRegression(max_iter=1000)
 
         model.fit(
             X_train,

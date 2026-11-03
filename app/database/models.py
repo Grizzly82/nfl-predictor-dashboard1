@@ -52,6 +52,7 @@ class Game(Base):
     away_score = Column(Integer)
 
     home_win = Column(Boolean)
+    game_tie = Column(Boolean, default=False, nullable=False)
 
     __table_args__ = (
 
