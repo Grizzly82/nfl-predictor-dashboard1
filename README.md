@@ -54,14 +54,14 @@ The dashboard safely displays placeholder values if the model is missing or need
 
 ## 🛠️ Tech Stack
 
-| Category | Technology |
-|---|---|
-| Interface | Dash, Dash Bootstrap Components, Plotly |
-| Data | Pandas, NumPy |
-| Database | PostgreSQL, SQLAlchemy, psycopg2 |
+| Category         | Technology                                |
+| ---------------- | ----------------------------------------- |
+| Interface        | Dash, Dash Bootstrap Components, Plotly   |
+| Data             | Pandas, NumPy                             |
+| Database         | PostgreSQL, SQLAlchemy, psycopg2          |
 | Machine Learning | scikit-learn, Logistic Regression, joblib |
-| Data Source | ESPN Scoreboard API |
-| Environment | Python, uv, python-dotenv |
+| Data Source      | ESPN Scoreboard API                       |
+| Environment      | Python, uv, python-dotenv                 |
 
 ## 🚀 Getting Started
 
@@ -167,6 +167,46 @@ uv run python -m compileall -q app
 - Team selections are based on a canonical list of all 32 NFL teams and do not depend on database availability.
 - Equal final scores are classified as ties.
 - Model performance should improve as additional seasons and features are added.
+
+# Project Metrics
+
+| Category                   | Metric                  |
+| -------------------------- | ----------------------- |
+| NFL Teams Supported        | 32                      |
+| Historical Games Processed | TBD                     |
+| Seasons Ingested           | TBD                     |
+| Database Tables            | 3+                      |
+| Dashboard Charts           | 5+                      |
+| Dashboard KPI Cards        | 10+                     |
+| Engineered Features        | TBD                     |
+| Machine Learning Models    | 1 (Logistic Regression) |
+| Prediction Accuracy        | TBD                     |
+| ROC-AUC Score              | TBD                     |
+| API Source                 | ESPN NFL API            |
+| Database                   | PostgreSQL              |
+| Dashboard Framework        | Plotly Dash             |
+
+## Results
+
+The platform currently supports:
+
+- 32 NFL teams
+- PostgreSQL-backed analytics
+- Automated ETL workflows
+- Interactive team exploration
+- Head-to-head team comparison
+- Machine learning game prediction
+- Model evaluation and diagnostics
+
+Model Performance:
+
+- Accuracy: 66.4%
+- ROC-AUC: 0.713
+- Features Engineered: 10
+- Teams Supported: 32
+- Dashboard Visualizations: 6
+
+The application demonstrates the full analytics lifecycle from data ingestion through machine learning and visualization.
 
 ## 👤 Author
 
