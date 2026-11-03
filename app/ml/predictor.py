@@ -1,6 +1,7 @@
 import joblib
 from pathlib import Path
 
+
 from app.services.team_features import (
     build_team_features,
 )
@@ -14,7 +15,7 @@ def predict_game(
     away_team,
 ):
 
-    if not MODEL_PATH.exists():
+    if not MODEL_PATH.exists() or MODEL_PATH.stat().st_size == 0:
         return {
             "winner": None,
             "home_probability": None,
@@ -22,7 +23,15 @@ def predict_game(
             "error": "Model not trained yet",
         }
 
-    model = joblib.load(MODEL_PATH)
+    try:
+        model = joblib.load(MODEL_PATH)
+    except (EOFError, OSError, ValueError):
+        return {
+            "winner": None,
+            "home_probability": None,
+            "away_probability": None,
+            "error": "Model not trained or model file is invalid",
+        }
 
     home = build_team_features(
         db,

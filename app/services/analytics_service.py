@@ -1,6 +1,7 @@
 import pandas as pd
 
 from app.database.models import Game
+from app.utils.nfl import NFL_TEAM_ABBREVIATIONS
 
 
 def total_games(db):
@@ -249,27 +250,13 @@ def get_team_summary(
 
 def get_all_teams(db):
     """
-    Teams for dropdowns.
+    Return all 32 NFL teams, including teams not playing in the
+    current week's games.
     """
 
-    games = (
-    db.query(Game)
-    .filter(
-        (Game.home_team == team_name)
-        |
-        (Game.away_team == team_name)
-    )
-    .order_by(Game.game_date)
-    .all()
-)
-
-    teams = set()
-
-    for game in games:
-        teams.add(game.home_team)
-        teams.add(game.away_team)
-
-    return sorted(list(teams))
+    # Use the canonical NFL list rather than database-only values so
+    # bye weeks do not hide teams and legacy abbreviations do not add extras.
+    return sorted(NFL_TEAM_ABBREVIATIONS)
 
 def get_team_game_history(
     db,

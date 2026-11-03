@@ -26,34 +26,38 @@ from app.services.training_data import (
 MODEL_PATH = Path(__file__).resolve().parent / "model.pkl"
 
 
-def evaluate_model():
-    if not MODEL_PATH.exists():
-        return {
-            "accuracy": 0.0,
-            "confusion_matrix": [[0, 0], [0, 0]],
-            "fpr": [],
-            "tpr": [],
-            "roc_auc": 0.0,
-        }
+def _empty_model_metrics():
+    return {
+        "accuracy": 0.0,
+        "confusion_matrix": [[0, 0], [0, 0]],
+        "fpr": [],
+        "tpr": [],
+        "roc_auc": 0.0,
+    }
 
-    model = joblib.load(MODEL_PATH)
+
+def _load_model():
+    if not MODEL_PATH.exists() or MODEL_PATH.stat().st_size == 0:
+        return None
+
+    try:
+        return joblib.load(MODEL_PATH)
+    except (EOFError, OSError, ValueError):
+        return None
+
+
+def evaluate_model():
+    model = _load_model()
+    if model is None:
+        return _empty_model_metrics()
 
     db = SessionLocal()
 
     try:
-
-        df = build_training_dataframe(
-            db
-        )
+        df = build_training_dataframe(db)
 
         if df.empty or len(df) < 5:
-            return {
-                "accuracy": 0.0,
-                "confusion_matrix": [[0, 0], [0, 0]],
-                "fpr": [],
-                "tpr": [],
-                "roc_auc": 0.0,
-            }
+            return _empty_model_metrics()
 
         X = df[
             [
@@ -65,50 +69,22 @@ def evaluate_model():
                 "away_papg",
             ]
         ]
-
         y = df["target"]
 
-        (
-            X_train,
-            X_test,
-            y_train,
-            y_test,
-        ) = train_test_split(
+        X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
             test_size=0.2,
             random_state=42,
         )
 
-        predictions = model.predict(
-            X_test
-        )
+        predictions = model.predict(X_test)
+        probabilities = model.predict_proba(X_test)[:, 1]
 
-        probabilities = (
-            model.predict_proba(
-                X_test
-            )[:, 1]
-        )
-
-        accuracy = accuracy_score(
-            y_test,
-            predictions,
-        )
-
-        cm = confusion_matrix(
-            y_test,
-            predictions,
-        )
-
-        fpr, tpr, _ = roc_curve(
-            y_test,
-            probabilities,
-        )
-
-        roc_auc = auc(
-            fpr,
-            tpr,
-        )
+        accuracy = accuracy_score(y_test, predictions)
+        cm = confusion_matrix(y_test, predictions)
+        fpr, tpr, _ = roc_curve(y_test, probabilities)
+        roc_auc = auc(fpr, tpr)
 
         return {
             "accuracy": accuracy,
@@ -117,19 +93,13 @@ def evaluate_model():
             "tpr": tpr,
             "roc_auc": roc_auc,
         }
-
     finally:
         db.close()
 
-# Get Feature Importance
+
 def get_feature_importance():
-
-    if not MODEL_PATH.exists():
-        return pd.DataFrame({"feature": [], "importance": []})
-
-    model = joblib.load(MODEL_PATH)
-
-    if not hasattr(model, "coef_"):
+    model = _load_model()
+    if model is None or not hasattr(model, "coef_"):
         return pd.DataFrame({"feature": [], "importance": []})
 
     features = [
@@ -142,7 +112,6 @@ def get_feature_importance():
     ]
 
     coeffs = model.coef_[0]
-
     results = pd.DataFrame(
         {
             "feature": features,
@@ -150,7 +119,4 @@ def get_feature_importance():
         }
     )
 
-    return results.sort_values(
-        by="importance",
-        ascending=False,
-    )
+    return results.sort_values(by="importance", ascending=False)

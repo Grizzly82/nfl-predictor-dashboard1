@@ -1,6 +1,6 @@
-from turtle import pd
-
+import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 from dash import Dash, Input, Output, html
 import dash_bootstrap_components as dbc
@@ -89,11 +89,17 @@ def register_callbacks(app):
                 db
             )
 
-            fig = px.bar(
-                df,
-                x="team",
-                y="points",
+            fig = go.Figure(
+                data=[go.Bar(
+                    x=df["team"].tolist(),
+                    y=df["points"].tolist(),
+                )]
+            )
+            fig.update_layout(
                 title="Top Scoring Teams",
+                template="plotly_white",
+                xaxis_title="Team",
+                yaxis_title="Points",
             )
 
             return fig
@@ -123,11 +129,19 @@ def register_callbacks(app):
                 )
             )
 
-            fig = px.bar(
-                df.head(10),
-                x="team",
-                y="win_percentage",
+            df = df.head(10)
+            fig = go.Figure(
+                data=[go.Bar(
+                    x=df["team"].tolist(),
+                    y=df["win_percentage"].tolist(),
+                )]
+            )
+            fig.update_layout(
                 title="Top Win Percentages",
+                template="plotly_white",
+                xaxis_title="Team",
+                yaxis_title="Win Percentage",
+                yaxis_range=[0, 100],
             )
 
             return fig
@@ -484,10 +498,27 @@ def update_roc_curve(_):
 
     metrics = evaluate_model()
 
+    if len(metrics["fpr"]) == 0 or len(metrics["tpr"]) == 0:
+        return px.line(title="ROC Curve - Not Enough Data")
+
+    roc_df = pd.DataFrame(
+        {
+            "False Positive Rate": metrics["fpr"],
+            "True Positive Rate": metrics["tpr"],
+        }
+    )
+
     fig = px.line(
-        x=metrics["fpr"],
-        y=metrics["tpr"],
+        roc_df,
+        x="False Positive Rate",
+        y="True Positive Rate",
         title="ROC Curve",
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        xaxis_range=[0, 1],
+        yaxis_range=[0, 1],
     )
 
     return fig
@@ -506,11 +537,17 @@ def update_feature_importance(_):
 
     df = get_feature_importance()
 
-    fig = px.bar(
-        df,
-        x="feature",
-        y="importance",
-        title="Feature Importance"
+    fig = go.Figure(
+        data=[go.Bar(
+            x=df["feature"].tolist() if not df.empty else [],
+            y=df["importance"].tolist() if not df.empty else [],
+        )]
+    )
+    fig.update_layout(
+        title="Feature Importance",
+        template="plotly_white",
+        xaxis_title="Feature",
+        yaxis_title="Importance",
     )
 
     return fig

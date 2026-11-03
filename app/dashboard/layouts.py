@@ -5,11 +5,11 @@ import dash_bootstrap_components as dbc
 
 from app.utils.nfl import (
     get_current_nfl_season,
+    get_current_nfl_week,
 )
 
-CURRENT_SEASON = (
-    get_current_nfl_season()
-)
+CURRENT_SEASON = get_current_nfl_season()
+CURRENT_WEEK = get_current_nfl_week()
 
 layout = dbc.Container(
 
@@ -29,7 +29,7 @@ layout = dbc.Container(
                     ),
 
                     html.H5(
-                        f"NFL Season {CURRENT_SEASON}",
+                        f"NFL Season {CURRENT_SEASON} — Week {CURRENT_WEEK}",
                         className="text-center text-muted"
                     ),
 
