@@ -217,6 +217,7 @@ def register_callbacks(app):
 
         finally:
             db.close()
+            
 
     @app.callback(
         [
@@ -512,30 +513,30 @@ def register_callbacks(app):
                     dbc.Alert(
                         f"🏆 Predicted Winner: {winner}",
                         color="success",
-                        className="text-center mb-3",
+                        className="text-center",
                     ),
                     dbc.Row(
                         [
                             dbc.Col(
                                 dcc.Graph(
                                     figure=home_gauge,
-                                    style={"height": "300px"},
+                                    config={"displayModeBar": False},
                                 ),
                                 xs=12,
                                 md=6,
-                                className="px-2",
+                                className="text-center",
                             ),
                             dbc.Col(
                                 dcc.Graph(
                                     figure=away_gauge,
-                                    style={"height": "300px"},
+                                    config={"displayModeBar": False},
                                 ),
                                 xs=12,
                                 md=6,
-                                className="px-2",
+                                className="text-center",
                             ),
                         ],
-                        className="align-items-center gx-3",
+                        className="align-items-center w-100 g-3",
                     ),
                 ],
                 fluid=True,
@@ -733,3 +734,243 @@ def update_matchup_banner(team_a, team_b):
             )
         )
     )
+
+
+
+@app.callback(
+        Output(
+            "prediction-explanation",
+            "children"
+        ),
+        [
+            Input(
+                "team-a-dropdown",
+                "value"
+            ),
+            Input(
+                "team-b-dropdown",
+                "value"
+            ),
+        ],
+    )
+def update_prediction_explanation(
+        team_a,
+        team_b,
+    ):
+
+          return dbc.Table(
+
+    [
+
+        html.Thead(
+
+            html.Tr(
+
+                [
+
+                    html.Th(
+                        "Factor"
+                    ),
+
+                    html.Th(
+                        "Advantage"
+                    ),
+
+                ]
+
+            )
+
+        ),
+
+        html.Tbody(
+
+            [
+
+                html.Tr([
+
+                    html.Td(
+                        "Win %"
+                    ),
+
+                    html.Td(
+                        prediction[
+                            "win_pct_diff"
+                        ]
+                    ),
+
+                ]),
+
+                html.Tr([
+
+                    html.Td(
+                        "PPG"
+                    ),
+
+                    html.Td(
+                        prediction[
+                            "ppg_diff"
+                        ]
+                    ),
+
+                ]),
+
+                html.Tr([
+
+                    html.Td(
+                        "Defense"
+                    ),
+
+                    html.Td(
+                        prediction[
+                            "papg_diff"
+                        ]
+                    ),
+
+                ]),
+
+                html.Tr([
+
+                    html.Td(
+                        "Point Differential"
+                    ),
+
+                    html.Td(
+                        prediction[
+                            "point_diff_advantage"
+                        ]
+                    ),
+
+                ]),
+
+            ]
+
+        )
+
+    ],
+
+    bordered=True,
+    striped=True,
+
+) 
+# Update Prediction Explanation
+@app.callback(
+    Output(
+        "prediction-explanation",
+        "children",
+    ),
+    [
+        Input(
+            "team-a-dropdown",
+            "value",
+        ),
+        Input(
+            "team-b-dropdown",
+            "value",
+        ),
+    ],
+)
+def update_prediction_explanation(
+    team_a,
+    team_b,
+):
+
+    if not team_a or not team_b:
+        return ""
+
+    db = SessionLocal()
+
+    try:
+
+        prediction = predict_game(
+            db,
+            team_a,
+            team_b,
+        )
+        return dbc.Table(
+
+            [
+
+                html.Thead(
+
+                    html.Tr(
+                        [
+                            html.Th(
+                                "Factor"
+                            ),
+                            html.Th(
+                                "Advantage"
+                            ),
+                        ]
+                    )
+
+                ),
+
+                html.Tbody(
+
+                    [
+
+                        html.Tr(
+                            [
+                                html.Td(
+                                    "Win %"
+                                ),
+                                html.Td(
+                                    prediction[
+                                        "win_pct_diff"
+                                    ]
+                                ),
+                            ]
+                        ),
+
+                        html.Tr(
+                            [
+                                html.Td(
+                                    "PPG"
+                                ),
+                                html.Td(
+                                    prediction[
+                                        "ppg_diff"
+                                    ]
+                                ),
+                            ]
+                        ),
+
+                        html.Tr(
+                            [
+                                html.Td(
+                                    "Defense"
+                                ),
+                                html.Td(
+                                    prediction[
+                                        "papg_diff"
+                                    ]
+                                ),
+                            ]
+                        ),
+
+                        html.Tr(
+                            [
+                                html.Td(
+                                    "Point Differential"
+                                ),
+                                html.Td(
+                                    prediction[
+                                        "point_diff_advantage"
+                                    ]
+                                ),
+                            ]
+                        ),
+
+                    ]
+
+                )
+
+            ],
+
+            bordered=True,
+            striped=True,
+
+        )
+  
+    finally:
+        db.close()

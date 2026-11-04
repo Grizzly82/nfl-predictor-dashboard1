@@ -56,25 +56,27 @@ def predict_game(
     X = pd.DataFrame([{
         "home_win_pct": home["win_pct"] / 100,
         "away_win_pct": away["win_pct"] / 100,
+
         "home_ppg": home["ppg"],
         "away_ppg": away["ppg"],
+
         "home_papg": home["papg"],
         "away_papg": away["papg"],
     }])
 
-    probability = (
-        model.predict_proba(X)[0][1]
-    )
+    try:
+        probability = float(model.predict_proba(X)[0][1])
+    except (ValueError, AttributeError, TypeError) as exc:
+        return {
+            "winner": None,
+            "home_probability": None,
+            "away_probability": None,
+            "error": f"Unable to generate prediction: {exc}",
+        }
 
-    home_probability = round(
-        probability * 100,
-        1,
-    )
+    home_probability = float(round(probability * 100, 1))
 
-    away_probability = round(
-        (1 - probability) * 100,
-        1,
-    )
+    away_probability = float(round((1 - probability) * 100, 1))
 
     winner = (
         home_team
@@ -83,10 +85,48 @@ def predict_game(
         else away_team
     )
 
+    win_pct_diff = round(
+    home["win_pct"] -
+    away["win_pct"],
+    1,
+)
+
+    ppg_diff = round(
+        home["ppg"] -
+        away["ppg"],
+        1,
+    )
+
+    papg_diff = round(
+        away["papg"] -
+        home["papg"],
+        1,
+    )
+
+    point_diff_advantage = round(
+        home["point_diff"] -
+        away["point_diff"],
+        1,
+    )
+
     return {
         "winner": winner,
+
         "home_probability":
             home_probability,
+
         "away_probability":
             away_probability,
+
+        "win_pct_diff":
+            win_pct_diff,
+
+        "ppg_diff":
+            ppg_diff,
+
+        "papg_diff":
+            papg_diff,
+
+        "point_diff_advantage":
+            point_diff_advantage,
     }

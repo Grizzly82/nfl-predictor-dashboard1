@@ -379,6 +379,22 @@ layout = dbc.Container(
             )
         ),
 
+
+        dbc.Card(
+            dbc.CardBody(
+                [
+                    html.H4(
+                        "🧠 Prediction Explanation"
+                    ),
+
+                    html.Div(
+                        id="prediction-explanation"
+                    ),
+                ]
+            ),
+            className="mt-3",
+        ),
+
         html.Hr(className="my-5"),
 
         # ==================================================

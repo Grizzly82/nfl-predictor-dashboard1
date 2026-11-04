@@ -45,6 +45,7 @@ def build_training_dataframe(db):
 
         home = team_stats[home_team]
         away = team_stats[away_team]
+        
 
         # Skip teams with no history yet
 
@@ -94,6 +95,8 @@ def build_training_dataframe(db):
                     "target": int(
                         game.home_win
                     ),
+                    "home_recent_form": home["recent_form"],
+                    "away_recent_form": away["recent_form"],
                 }
             )
 
