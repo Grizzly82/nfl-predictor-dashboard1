@@ -19,6 +19,10 @@
 
 The application loads completed games from the ESPN scoreboard API, stores them in PostgreSQL through SQLAlchemy, and uses a trained logistic regression model to estimate the probability that the home team will win.
 
+## Live Demo
+
+https://nfl-predictor-dashboard1.onrender.com/
+
 ## ✨ Features
 
 - **League overview** — total games, team count, average points, and home-team win percentage

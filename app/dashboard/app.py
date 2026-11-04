@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+import os
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -21,7 +23,24 @@ server = app.server
     app.run(debug=True)
  """
 
-if __name__ == "__main__":
+""" if __name__ == "__main__":
     app.run(
         debug=False
+    ) """
+
+
+
+if __name__ == "__main__":
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            8050
+        )
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False,
     )
