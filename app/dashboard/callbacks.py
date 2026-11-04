@@ -2,8 +2,8 @@ import pandas as pd
 from app.database import db
 import plotly.express as px
 import plotly.graph_objects as go
-
-from dash import Dash, Input, Output, html
+from app.assets.team_assets import TEAM_INFO
+from dash import Dash, Input, Output, html, dcc
 import dash_bootstrap_components as dbc
 
 """ app = Dash(
@@ -14,16 +14,8 @@ import dash_bootstrap_components as dbc
     ],
 )
 server = app.server """
-from app.assets.team_assets import (
-    TEAM_INFO,
-)
-
 app = Dash(
     __name__,
-    style={
-    "backgroundColor":
-        TEAM_INFO[team]["primary"],
-    "color": "white",},
     external_stylesheets=[
         dbc.themes.FLATLY
     ]
@@ -60,6 +52,21 @@ from app.ml.predictor import (
 )
 
 
+@app.callback(
+    Output("team-card", "style"),
+    Input("team-dropdown", "value")
+)
+def update_team_theme(team):
+
+    if not team:
+        return {}
+
+    return {
+        "backgroundColor":
+            TEAM_INFO[team]["primary"],
+        "color": "white",
+    }
+
 def register_callbacks(app):
 
     @app.callback(
@@ -71,19 +78,16 @@ def register_callbacks(app):
         ],
         Input("games-card", "id"),
     )
-    def update_metrics(_):
-
+    def update_league_metrics(_):
         db = SessionLocal()
 
         try:
-
             return (
                 total_games(db),
                 total_teams(db),
                 average_points_per_game(db),
                 f"{home_field_advantage(db)}%",
             )
-
         finally:
             db.close()
 
@@ -240,6 +244,10 @@ def register_callbacks(app):
                 "team-win-pct",
                 "children",
             ),
+            Output(
+                "team-point-diff",
+                "children",
+            ),
         ],
         Input(
             "team-dropdown",
@@ -249,7 +257,7 @@ def register_callbacks(app):
     def update_team_cards(team):
 
         if not team:
-            return "-", "-", "-", "-", "-", "-"
+            return "-", "-", "-", "-", "-", "-", "-"
 
         db = SessionLocal()
 
@@ -268,7 +276,8 @@ def register_callbacks(app):
                 summary["ties"],
                 summary["ppg"],
                 summary["papg"],
-                summary["win_pct"],
+                f"{summary['win_pct']}%",
+                summary["point_diff"],
             )
 
         finally:
@@ -455,6 +464,9 @@ def register_callbacks(app):
                 team_b,
             )
 
+            if prediction.get("error"):
+                return prediction["error"]
+
             home_gauge = go.Figure(
                 go.Indicator(
                     mode="gauge+number",
@@ -468,8 +480,8 @@ def register_callbacks(app):
                             "range": [0, 100]
                         },
                         "bar": {
-                            "color": "green"
-                        },
+                            "color": TEAM_INFO[team_a]["primary"]
+                         }
                     }
                 )
             )
@@ -487,39 +499,47 @@ def register_callbacks(app):
                         "range": [0, 100]
                     },
                     "bar": {
-                        "color": "royalblue"
+                        "color": TEAM_INFO[team_b]["primary"]
                     },
                 }
             )
         )
 
-            return dbc.Row(
+            winner = prediction["winner"]
 
-    [
-
-        dbc.Col(
-
-            dcc.Graph(
-                figure=home_gauge
-            ),
-
-            md=6,
-
-        ),
-
-        dbc.Col(
-
-            dcc.Graph(
-                figure=away_gauge
-            ),
-
-            md=6,
-
-        ),
-
-    ]
-
-)
+            return dbc.Container(
+                [
+                    dbc.Alert(
+                        f"🏆 Predicted Winner: {winner}",
+                        color="success",
+                        className="text-center mb-3",
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dcc.Graph(
+                                    figure=home_gauge,
+                                    style={"height": "300px"},
+                                ),
+                                xs=12,
+                                md=6,
+                                className="px-2",
+                            ),
+                            dbc.Col(
+                                dcc.Graph(
+                                    figure=away_gauge,
+                                    style={"height": "300px"},
+                                ),
+                                xs=12,
+                                md=6,
+                                className="px-2",
+                            ),
+                        ],
+                        className="align-items-center gx-3",
+                    ),
+                ],
+                fluid=True,
+            )
 
 
         finally:
@@ -650,9 +670,66 @@ def update_team_logo(team):
     if not team:
         return ""
 
-    return html.Img(
-        src=TEAM_INFO[team]["logo"],
-        style={
-            "height": "125px"
-        }
+    return html.Div(
+        [
+            html.Img(
+                src=TEAM_INFO[team]["logo"],
+                style={"height": "120px"}
+            ),
+            html.H3(
+                TEAM_INFO[team]["name"],
+                style={
+                    "color": TEAM_INFO[team]["primary"],
+                    "marginTop": "10px",
+                }
+            ),
+        ],
+        className="text-center",
+    )
+
+@app.callback(
+    Output(
+        "matchup-banner",
+        "children"
+    ),
+    [
+        Input(
+            "team-a-dropdown",
+            "value"
+        ),
+        Input(
+            "team-b-dropdown",
+            "value"
+        ),
+    ]
+)
+def update_matchup_banner(team_a, team_b):
+
+    if not team_a or not team_b:
+        return ""
+
+    return dbc.Card(
+        dbc.CardBody(
+            html.Div(
+                [
+                    html.Img(
+                        src=TEAM_INFO[team_a]["logo"],
+                        style={"height": "100px"}
+                    ),
+                    html.H2(
+                        f"{team_a} vs {team_b}",
+                        style={"margin": "0 30px"}
+                    ),
+                    html.Img(
+                        src=TEAM_INFO[team_b]["logo"],
+                        style={"height": "100px"}
+                    ),
+                ],
+                style={
+                    "display": "flex",
+                    "justifyContent": "center",
+                    "alignItems": "center",
+                }
+            )
+        )
     )

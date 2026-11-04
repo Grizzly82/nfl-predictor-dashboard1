@@ -1,8 +1,6 @@
 import joblib
+import pandas as pd
 from pathlib import Path
-from pathlib import Path
-
-import joblib
 
 from app.services.team_features import (
     build_team_features,
@@ -21,10 +19,6 @@ MODEL_FILE = (
     BASE_DIR / "model.pkl"
 )
 
-model = joblib.load(
-    MODEL_FILE
-)
-
 def predict_game(
     db,
     home_team,
@@ -41,7 +35,7 @@ def predict_game(
 
     try:
         model = joblib.load(MODEL_FILE)
-    except (EOFError, OSError, ValueError):
+    except (EOFError, OSError, ValueError, AttributeError, ImportError):
         return {
             "winner": None,
             "home_probability": None,
@@ -59,14 +53,14 @@ def predict_game(
         away_team,
     )
 
-    X = [[
-        home["win_pct"] / 100,
-        away["win_pct"] / 100,
-        home["ppg"],
-        away["ppg"],
-        home["papg"],
-        away["papg"],
-    ]]
+    X = pd.DataFrame([{
+        "home_win_pct": home["win_pct"] / 100,
+        "away_win_pct": away["win_pct"] / 100,
+        "home_ppg": home["ppg"],
+        "away_ppg": away["ppg"],
+        "home_papg": home["papg"],
+        "away_papg": away["papg"],
+    }])
 
     probability = (
         model.predict_proba(X)[0][1]

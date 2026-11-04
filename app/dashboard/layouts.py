@@ -57,6 +57,7 @@ layout = dbc.Container(
                                 html.H2(
                                     id="games-card"
                                 ),
+                                
                             ]
                         )
                     ),
