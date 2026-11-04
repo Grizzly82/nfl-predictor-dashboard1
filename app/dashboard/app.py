@@ -1,16 +1,13 @@
 import sys
 from pathlib import Path
 
-
-from app.startup import (
-    verify_environment
-)
-
-verify_environment()
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.startup import verify_environment
+
+verify_environment()
 
 from app.dashboard.callbacks import app, register_callbacks
 from app.dashboard.layouts import layout
