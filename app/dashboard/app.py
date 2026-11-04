@@ -15,6 +15,8 @@ from app.dashboard.layouts import layout
 app.layout = layout
 register_callbacks(app)
 
+server = app.server
+
 """ if __name__ == "__main__":
     app.run(debug=True)
  """
