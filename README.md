@@ -208,6 +208,26 @@ Model Performance:
 
 The application demonstrates the full analytics lifecycle from data ingestion through machine learning and visualization.
 
+# Version 2
+
+## Live Demo
+
+https://nfl-analytics-dashboard.onrender.com
+
+## Architecture
+
+Neon PostgreSQL
+↓
+SQLAlchemy
+↓
+Analytics Layer
+↓
+Machine Learning
+↓
+Plotly Dash
+↓
+Render Deployment
+
 ## 👤 Author
 
 Created by **Cris Vizcaino**.

@@ -1,13 +1,29 @@
 import joblib
 from pathlib import Path
+from pathlib import Path
 
+import joblib
 
 from app.services.team_features import (
     build_team_features,
 )
 
-MODEL_PATH = Path(__file__).resolve().parent / "model.pkl"
+#MODEL_PATH = Path(__file__).resolve().parent / "model.pkl"
 
+
+BASE_DIR = (
+    Path(__file__)
+    .resolve()
+    .parent
+)
+
+MODEL_FILE = (
+    BASE_DIR / "model.pkl"
+)
+
+model = joblib.load(
+    MODEL_FILE
+)
 
 def predict_game(
     db,
@@ -15,7 +31,7 @@ def predict_game(
     away_team,
 ):
 
-    if not MODEL_PATH.exists() or MODEL_PATH.stat().st_size == 0:
+    if not MODEL_FILE.exists() or MODEL_FILE.stat().st_size == 0:
         return {
             "winner": None,
             "home_probability": None,
@@ -24,7 +40,7 @@ def predict_game(
         }
 
     try:
-        model = joblib.load(MODEL_PATH)
+        model = joblib.load(MODEL_FILE)
     except (EOFError, OSError, ValueError):
         return {
             "winner": None,

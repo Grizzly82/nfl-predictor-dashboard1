@@ -2,6 +2,9 @@ import joblib
 from pathlib import Path
 
 import pandas as pd
+from pathlib import Path
+
+import joblib
 
 from sklearn.metrics import (
     accuracy_score,
@@ -23,8 +26,22 @@ from app.services.training_data import (
 )
 
 
-MODEL_PATH = Path(__file__).resolve().parent / "model.pkl"
+#MODEL_PATH = Path(__file__).resolve().parent / "model.pkl"
 
+
+BASE_DIR = (
+    Path(__file__)
+    .resolve()
+    .parent
+)
+
+MODEL_FILE = (
+    BASE_DIR / "model.pkl"
+)
+
+model = joblib.load(
+    MODEL_FILE
+)
 
 def _empty_model_metrics():
     return {
@@ -37,11 +54,11 @@ def _empty_model_metrics():
 
 
 def _load_model():
-    if not MODEL_PATH.exists() or MODEL_PATH.stat().st_size == 0:
+    if not MODEL_FILE.exists() or MODEL_FILE.stat().st_size == 0:
         return None
 
     try:
-        return joblib.load(MODEL_PATH)
+        return joblib.load(MODEL_FILE)
     except (EOFError, OSError, ValueError):
         return None
 

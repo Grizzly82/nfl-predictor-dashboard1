@@ -5,14 +5,33 @@ import plotly.graph_objects as go
 from dash import Dash, Input, Output, html
 import dash_bootstrap_components as dbc
 
-app = Dash(
+""" app = Dash(
     __name__,
     external_stylesheets=[
         dbc.themes.FLATLY,
         dbc.icons.FONT_AWESOME,
     ],
 )
+server = app.server """
+
+from app.dashboard.layouts import layout
+from app.dashboard.callbacks import (
+    register_callbacks
+)
+
+app = Dash(
+    __name__,
+    external_stylesheets=[
+        dbc.themes.FLATLY
+    ]
+)
+
 server = app.server
+
+app.layout = layout
+
+register_callbacks(app)
+
 
 from app.database.db import (
     SessionLocal,
