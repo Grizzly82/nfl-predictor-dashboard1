@@ -1,4 +1,5 @@
 import pandas as pd
+from app.database import db
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -13,9 +14,16 @@ import dash_bootstrap_components as dbc
     ],
 )
 server = app.server """
+from app.assets.team_assets import (
+    TEAM_INFO,
+)
 
 app = Dash(
     __name__,
+    style={
+    "backgroundColor":
+        TEAM_INFO[team]["primary"],
+    "color": "white",},
     external_stylesheets=[
         dbc.themes.FLATLY
     ]
@@ -447,17 +455,72 @@ def register_callbacks(app):
                 team_b,
             )
 
-            if prediction.get("error"):
-                return prediction["error"]
-
-            return (
-                f"Winner: "
-                f"{prediction['winner']} | "
-                f"{team_a}: "
-                f"{prediction['home_probability']}% | "
-                f"{team_b}: "
-                f"{prediction['away_probability']}%"
+            home_gauge = go.Figure(
+                go.Indicator(
+                    mode="gauge+number",
+                    value=prediction["home_probability"],
+                    title={
+                        "text":
+                            f"{team_a} Win Probability"
+                    },
+                    gauge={
+                        "axis": {
+                            "range": [0, 100]
+                        },
+                        "bar": {
+                            "color": "green"
+                        },
+                    }
+                )
             )
+
+            away_gauge = go.Figure(
+            go.Indicator(
+                mode="gauge+number",
+                value=prediction["away_probability"],
+                title={
+                    "text":
+                        f"{team_b} Win Probability"
+                },
+                gauge={
+                    "axis": {
+                        "range": [0, 100]
+                    },
+                    "bar": {
+                        "color": "royalblue"
+                    },
+                }
+            )
+        )
+
+            return dbc.Row(
+
+    [
+
+        dbc.Col(
+
+            dcc.Graph(
+                figure=home_gauge
+            ),
+
+            md=6,
+
+        ),
+
+        dbc.Col(
+
+            dcc.Graph(
+                figure=away_gauge
+            ),
+
+            md=6,
+
+        ),
+
+    ]
+
+)
+
 
         finally:
             db.close()
@@ -571,3 +634,25 @@ def update_feature_importance(_):
     )
 
     return fig
+
+@app.callback(
+    Output(
+        "team-logo-container",
+        "children"
+    ),
+    Input(
+        "team-dropdown",
+        "value"
+    )
+)
+def update_team_logo(team):
+
+    if not team:
+        return ""
+
+    return html.Img(
+        src=TEAM_INFO[team]["logo"],
+        style={
+            "height": "125px"
+        }
+    )

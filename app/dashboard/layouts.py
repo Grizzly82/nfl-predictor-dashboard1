@@ -180,7 +180,11 @@ layout = dbc.Container(
         # ==================================================
         # TEAM EXPLORER
         # ==================================================
-
+        html.Div(
+            id="team-logo-container",
+            className="text-center mb-3"
+        ),
+        
         html.H2(
             "🔍 Team Explorer",
             className="mb-4"
