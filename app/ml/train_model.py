@@ -1,11 +1,15 @@
 import sys
 from pathlib import Path
 
-import joblib
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+import joblib
+
+from app.ml.features import FEATURE_COLUMNS
 
 from sklearn.linear_model import (
     LogisticRegression,
@@ -41,16 +45,7 @@ def train_model():
             print("Not enough game history to train a model yet.")
             return
 
-        X = df[
-            [
-                "home_win_pct",
-                "away_win_pct",
-                "home_ppg",
-                "away_ppg",
-                "home_papg",
-                "away_papg",
-            ]
-        ]
+        X = df[FEATURE_COLUMNS]
 
         y = df["target"]
 
@@ -64,9 +59,47 @@ def train_model():
             y,
             test_size=0.2,
             random_state=42,
+            stratify=y,
         )
 
-        model = LogisticRegression(max_iter=1000)
+        print("\n===== EVALUATION =====")
+
+        print(
+            f"Total Rows: {len(df)}"
+        )
+
+        print(
+            f"Train Rows: {len(X_train)}"
+        )
+
+        print(
+            f"Test Rows: {len(X_test)}"
+        )
+
+        print(
+            f"Home Wins: {y.sum()}"
+        )
+
+        print(
+            f"Away Wins: {len(y) - y.sum()}"
+        )
+
+        print("======================\n")
+
+        model = Pipeline(
+        [
+            (
+                "scaler",
+                StandardScaler(),
+            ),
+            (
+                "model",
+                LogisticRegression(
+                    max_iter=1000
+                ),
+            ),
+        ]
+    )
 
         model.fit(
             X_train,
@@ -82,8 +115,60 @@ def train_model():
             predictions,
         )
 
+        import json
+
+        metrics = {
+         "accuracy": float(accuracy)
+        }
+
+        with open(
+            "app/ml/metrics.json",
+            "w"
+        ) as f:
+
+            json.dump(
+                metrics,
+                f,
+                indent=4,
+            )
+
+        print("\n===== TRAINING DIAGNOSTICS =====")
+
+        print(
+            f"Training Rows: {len(df)}"
+        )
+
+        print(
+            f"Training Set Size: {len(X_train)}"
+        )
+
+        print(
+            f"Test Set Size: {len(X_test)}"
+        )
+
+        print(
+            f"Unique Teams: {df.shape[0]}"
+        )
+
         print(
             f"Accuracy: {accuracy:.2%}"
+        )
+
+        print("===============================\n")
+
+        print(
+            f"Accuracy: {accuracy:.2%}"
+        )
+        print(
+            f"Training Rows: {len(df)}"
+        )
+
+        print(
+            f"Training Set: {len(X_train)}"
+        )
+
+        print(
+            f"Test Set: {len(X_test)}"
         )
 
         joblib.dump(

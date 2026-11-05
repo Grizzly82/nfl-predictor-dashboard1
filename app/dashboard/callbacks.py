@@ -111,6 +111,12 @@ def register_callbacks(app):
                 db
             )
 
+            print(df.head())
+
+            print(
+                f"Rows: {len(df)}"
+            )
+
             fig = go.Figure(
                 data=[go.Bar(
                     x=df["team"].tolist(),
@@ -372,14 +378,26 @@ def register_callbacks(app):
                     html.Thead(
                         html.Tr(
                             [
+                                html.Th("Metric"),
                                 html.Th(
-                                    "Metric"
+                                    [
+                                        html.Img(
+                                            src=TEAM_INFO[team_a]["logo"],
+                                            style={"height": "40px"},
+                                        ),
+                                        html.Br(),
+                                        TEAM_INFO[team_a]["name"],
+                                    ]
                                 ),
                                 html.Th(
-                                    team_a
-                                ),
-                                html.Th(
-                                    team_b
+                                    [
+                                        html.Img(
+                                            src=TEAM_INFO[team_b]["logo"],
+                                            style={"height": "40px"},
+                                        ),
+                                        html.Br(),
+                                        TEAM_INFO[team_b]["name"],
+                                    ]
                                 ),
                             ]
                         )
@@ -581,10 +599,17 @@ def update_confusion_matrix(_):
     ]
 
     fig = px.imshow(
-        cm,
-        text_auto=True,
-        title="Confusion Matrix"
-    )
+    cm,
+    text_auto=True,
+    x=[
+        "Pred Away Win",
+        "Pred Home Win",
+    ],
+    y=[
+        "Actual Away Win",
+        "Actual Home Win",
+    ],
+)
 
     return fig
 
@@ -735,123 +760,6 @@ def update_matchup_banner(team_a, team_b):
         )
     )
 
-
-
-@app.callback(
-        Output(
-            "prediction-explanation",
-            "children"
-        ),
-        [
-            Input(
-                "team-a-dropdown",
-                "value"
-            ),
-            Input(
-                "team-b-dropdown",
-                "value"
-            ),
-        ],
-    )
-def update_prediction_explanation(
-        team_a,
-        team_b,
-    ):
-
-          return dbc.Table(
-
-    [
-
-        html.Thead(
-
-            html.Tr(
-
-                [
-
-                    html.Th(
-                        "Factor"
-                    ),
-
-                    html.Th(
-                        "Advantage"
-                    ),
-
-                ]
-
-            )
-
-        ),
-
-        html.Tbody(
-
-            [
-
-                html.Tr([
-
-                    html.Td(
-                        "Win %"
-                    ),
-
-                    html.Td(
-                        prediction[
-                            "win_pct_diff"
-                        ]
-                    ),
-
-                ]),
-
-                html.Tr([
-
-                    html.Td(
-                        "PPG"
-                    ),
-
-                    html.Td(
-                        prediction[
-                            "ppg_diff"
-                        ]
-                    ),
-
-                ]),
-
-                html.Tr([
-
-                    html.Td(
-                        "Defense"
-                    ),
-
-                    html.Td(
-                        prediction[
-                            "papg_diff"
-                        ]
-                    ),
-
-                ]),
-
-                html.Tr([
-
-                    html.Td(
-                        "Point Differential"
-                    ),
-
-                    html.Td(
-                        prediction[
-                            "point_diff_advantage"
-                        ]
-                    ),
-
-                ]),
-
-            ]
-
-        )
-
-    ],
-
-    bordered=True,
-    striped=True,
-
-) 
 # Update Prediction Explanation
 @app.callback(
     Output(
@@ -886,91 +794,107 @@ def update_prediction_explanation(
             team_a,
             team_b,
         )
-        return dbc.Table(
+
+        if prediction.get("error"):
+            return prediction["error"]
+
+        confidence = abs(
+            prediction["home_probability"]
+            - prediction["away_probability"]
+        )
+
+        return html.Div(
 
             [
 
-                html.Thead(
-
-                    html.Tr(
-                        [
-                            html.Th(
-                                "Factor"
-                            ),
-                            html.Th(
-                                "Advantage"
-                            ),
-                        ]
-                    )
-
+                dbc.Alert(
+                    f"Model Confidence: {confidence:.1f}%",
+                    color="info",
                 ),
 
-                html.Tbody(
+                dbc.Table(
 
                     [
 
-                        html.Tr(
-                            [
-                                html.Td(
-                                    "Win %"
-                                ),
-                                html.Td(
-                                    prediction[
-                                        "win_pct_diff"
-                                    ]
-                                ),
-                            ]
+                        html.Thead(
+
+                            html.Tr(
+
+                                [
+
+                                    html.Th("Factor"),
+
+                                    html.Th("Advantage"),
+
+                                ]
+
+                            )
+
                         ),
 
-                        html.Tr(
+                        html.Tbody(
+
                             [
-                                html.Td(
-                                    "PPG"
-                                ),
-                                html.Td(
-                                    prediction[
-                                        "ppg_diff"
+
+                                html.Tr(
+                                    [
+                                        html.Td("Win %"),
+                                        html.Td(
+                                            f"{team_a} (+{prediction['win_pct_diff']}%)"
+                                            if prediction["win_pct_diff"] > 0
+                                            else f"{team_b} (+{abs(prediction['win_pct_diff'])}%)"
+                                        ),
                                     ]
                                 ),
-                            ]
-                        ),
 
-                        html.Tr(
-                            [
-                                html.Td(
-                                    "Defense"
-                                ),
-                                html.Td(
-                                    prediction[
-                                        "papg_diff"
+                                html.Tr(
+                                    [
+                                        html.Td("PPG"),
+                                        html.Td(
+                                            f"{team_a} (+{prediction['ppg_diff']})"
+                                            if prediction["ppg_diff"] > 0
+                                            else f"{team_b} (+{abs(prediction['ppg_diff'])})"
+                                        ),
                                     ]
                                 ),
-                            ]
-                        ),
 
-                        html.Tr(
-                            [
-                                html.Td(
-                                    "Point Differential"
-                                ),
-                                html.Td(
-                                    prediction[
-                                        "point_diff_advantage"
+                                html.Tr(
+                                    [
+                                        html.Td("Defense"),
+                                        html.Td(
+                                            f"{team_a} (+{prediction['papg_diff']})"
+                                            if prediction["papg_diff"] > 0
+                                            else f"{team_b} (+{abs(prediction['papg_diff'])})"
+                                        ),
                                     ]
                                 ),
+
+                                html.Tr(
+                                    [
+                                        html.Td("Point Differential"),
+                                        html.Td(
+                                            f"{team_a} (+{prediction['point_diff_advantage']})"
+                                            if prediction["point_diff_advantage"] > 0
+                                            else f"{team_b} (+{abs(prediction['point_diff_advantage'])})"
+                                        ),
+                                    ]
+                                ),
+
                             ]
+
                         ),
 
-                    ]
+                    ],
 
-                )
+                    bordered=True,
+                    striped=True,
+                    hover=True,
 
-            ],
+                ),
 
-            bordered=True,
-            striped=True,
+            ]
 
         )
-  
+
     finally:
         db.close()

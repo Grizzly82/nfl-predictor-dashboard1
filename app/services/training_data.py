@@ -92,11 +92,7 @@ def build_training_dataframe(db):
                     "away_ppg": away_ppg,
                     "home_papg": home_papg,
                     "away_papg": away_papg,
-                    "target": int(
-                        game.home_win
-                    ),
-                    "home_recent_form": home["recent_form"],
-                    "away_recent_form": away["recent_form"],
+                    "target": int(game.home_win),
                 }
             )
 

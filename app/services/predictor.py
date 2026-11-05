@@ -1,3 +1,10 @@
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from app.services.team_features import (
     build_team_features,
 )
@@ -53,6 +60,7 @@ def predict_matchup(
         + team_b_score
     )
 
+        
     team_a_probability = round(
         team_a_score
         / total

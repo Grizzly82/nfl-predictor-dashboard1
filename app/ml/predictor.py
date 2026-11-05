@@ -1,10 +1,18 @@
+import sys
 import joblib
 import pandas as pd
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.ml.features import FEATURE_COLUMNS
+
 from app.services.team_features import (
     build_team_features,
 )
+
 
 #MODEL_PATH = Path(__file__).resolve().parent / "model.pkl"
 
@@ -53,16 +61,27 @@ def predict_game(
         away_team,
     )
 
-    X = pd.DataFrame([{
-        "home_win_pct": home["win_pct"] / 100,
-        "away_win_pct": away["win_pct"] / 100,
+    X = pd.DataFrame(
+        [{
+            "home_win_pct":
+                home["win_pct"] / 100,
 
-        "home_ppg": home["ppg"],
-        "away_ppg": away["ppg"],
+            "away_win_pct":
+                away["win_pct"] / 100,
 
-        "home_papg": home["papg"],
-        "away_papg": away["papg"],
-    }])
+            "home_ppg":
+                home["ppg"],
+
+            "away_ppg":
+                away["ppg"],
+
+            "home_papg":
+                home["papg"],
+
+            "away_papg":
+                away["papg"],
+        }]
+    )
 
     try:
         probability = float(model.predict_proba(X)[0][1])
@@ -109,24 +128,57 @@ def predict_game(
         1,
     )
 
+    
     return {
         "winner": winner,
+        "home_probability": home_probability,
+        "away_probability": away_probability,
+        "win_pct_diff": win_pct_diff,
+        "ppg_diff": ppg_diff,
+        "papg_diff": papg_diff,
+        "point_diff_advantage": point_diff_advantage,
 
-        "home_probability":
-            home_probability,
+        "advantages": {
 
-        "away_probability":
-            away_probability,
+            "win_pct": {
+                "leader":
+                    home_team
+                    if win_pct_diff > 0
+                    else away_team,
 
-        "win_pct_diff":
-            win_pct_diff,
+                "value":
+                    abs(win_pct_diff),
+            },
 
-        "ppg_diff":
-            ppg_diff,
+            "ppg": {
+                "leader":
+                    home_team
+                    if ppg_diff > 0
+                    else away_team,
 
-        "papg_diff":
-            papg_diff,
+                "value":
+                    abs(ppg_diff),
+            },
 
-        "point_diff_advantage":
-            point_diff_advantage,
+            "papg": {
+                "leader":
+                    home_team
+                    if papg_diff > 0
+                    else away_team,
+
+                "value":
+                    abs(papg_diff),
+            },
+
+            "point_diff": {
+                "leader":
+                    home_team
+                    if point_diff_advantage > 0
+                    else away_team,
+
+                "value":
+                    abs(point_diff_advantage),
+            },
+
+        }
     }
