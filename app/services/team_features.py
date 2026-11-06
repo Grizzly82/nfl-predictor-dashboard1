@@ -1,3 +1,4 @@
+from app.database import db
 from app.database.models import Game
 
 from app.services.analytics_service import (
@@ -18,7 +19,11 @@ def get_recent_form(
     Number of wins in the last N games.
     """
 
-    games = db.query(Game).all()
+    games = (
+        db.query(Game)
+
+        .all()
+    )
 
     team_games = []
 
@@ -71,7 +76,11 @@ def get_win_streak(
     Current win streak.
     """
 
-    games = db.query(Game).all()
+    games = (
+        db.query(Game)
+
+        .all()
+    )
 
     team_games = []
 
@@ -125,6 +134,7 @@ def get_win_streak(
 def build_team_features(
     db,
     team_name,
+    season=None,
 ):
     """
     Build reusable team features.
@@ -133,6 +143,7 @@ def build_team_features(
     summary = get_team_summary(
         db,
         team_name,
+        season=season,
     )
 
     if summary is None:

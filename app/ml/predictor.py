@@ -31,6 +31,7 @@ def predict_game(
     db,
     home_team,
     away_team,
+    season=None,
 ):
 
     if not MODEL_FILE.exists() or MODEL_FILE.stat().st_size == 0:
@@ -54,11 +55,13 @@ def predict_game(
     home = build_team_features(
         db,
         home_team,
+        season=season,
     )
 
     away = build_team_features(
         db,
         away_team,
+        season=season,
     )
 
     X = pd.DataFrame(

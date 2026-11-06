@@ -1,97 +1,142 @@
 import pandas as pd
 
+from app.database import db
 from app.database.models import Game
 from app.utils.nfl import NFL_TEAM_ABBREVIATIONS
 
+# analytics_service.py
 
-def total_games(db):
-    """
-    Total games in database.
-    """
-    return db.query(Game).count()
+from app.database.models import Game
 
 
-def total_teams(db):
-    """
-    Count unique teams.
-    """
+def get_available_seasons(db):
 
-    games = db.query(Game).all()
+    seasons = (
+        db.query(Game.season)
+        .filter(Game.season.isnot(None))
+        .distinct()
+        .order_by(
+            Game.season.desc()
+        )
+        .all()
+    )
+
+    return [
+        season[0]
+        for season in seasons
+    ]
+
+def total_games(
+    db,
+    season=None,
+):
+
+    query = db.query(Game)
+
+    if season:
+
+        query = query.filter(
+            Game.season == season
+        )
+
+    return query.count()
+
+def total_teams(
+    db,
+    season=None,
+):
+
+    query = db.query(Game)
+
+    if season:
+
+        query = query.filter(
+            Game.season == season
+        )
 
     teams = set()
 
-    for game in games:
+    for game in query.all():
+
         teams.add(game.home_team)
         teams.add(game.away_team)
 
     return len(teams)
 
 
-def average_points_per_game(db):
-    """
-    Average combined points
-    scored per game.
-    """
+def average_points_per_game(
+    db,
+    season=None,
+):
 
-    games = db.query(Game).all()
+    query = db.query(Game)
+
+    if season:
+
+        query = query.filter(
+            Game.season == season
+        )
+
+    games = query.all()
 
     if not games:
         return 0
 
     total_points = sum(
-        game.home_score + game.away_score
-        for game in games
+        g.home_score + g.away_score
+        for g in games
     )
 
     return round(
-        total_points / len(games),
+        total_points /
+        len(games),
         1,
     )
 
 
-def home_field_advantage(db):
-    """
-    Home team win percentage.
-    """
+def home_field_advantage(
+    db,
+    season=None,
+):
 
-    games = db.query(Game).all()
+    query = db.query(Game)
 
-    if not games:
-        return 0
+    if season:
+
+        query = query.filter(
+            Game.season == season
+        )
+
+    games = query.all()
 
     non_ties = [
         game
         for game in games
-        if not getattr(game, "game_tie", False)
+        if getattr(game, "game_tie", False) is False
         and game.home_score != game.away_score
     ]
 
     if not non_ties:
         return 0
 
-    home_wins = sum(
-        1
-        for game in non_ties
-        if game.home_win
-    )
+    home_wins = sum(1 for game in non_ties if game.home_win)
 
-    percentage = (
-        home_wins / len(non_ties)
-    ) * 100
+    return round((home_wins / len(non_ties)) * 100, 1)
 
-    return round(
-        percentage,
-        1,
-    )
+def top_scoring_teams(
+    db,
+    season=None,
+):
 
+    query = db.query(Game)
 
-def top_scoring_teams(db):
-    """
-    Teams sorted by total points scored.
-    """
+    if season:
 
-    games = db.query(Game).all()
+        query = query.filter(
+            Game.season == season
+        )
 
+    games = query.all()
     team_points = {}
 
     for game in games:
@@ -118,13 +163,15 @@ def top_scoring_teams(db):
         reverse=True,
     )
 
+def top_scoring_dataframe(
+    db,
+    season=None,
+):
 
-def top_scoring_dataframe(db):
-    """
-    DataFrame for Plotly charts.
-    """
-
-    results = top_scoring_teams(db)[:10]
+    results = top_scoring_teams(
+        db,
+        season,
+    )[:10]
 
     return pd.DataFrame(
         results,
@@ -135,13 +182,17 @@ def top_scoring_dataframe(db):
     )
 
 
-def team_win_percentages(db):
+def team_win_percentages(db, season=None):
     """
     Calculate win percentage
     of every team.
     """
 
-    games = db.query(Game).all()
+    query = db.query(Game)
+    if season is not None:
+        query = query.filter(Game.season == season)
+
+    games = query.all()
 
     stats = {}
 
@@ -205,13 +256,13 @@ def team_win_percentages(db):
     )
 
 
-def team_win_percentage_dataframe(db):
+def team_win_percentage_dataframe(db, season=None):
     """
     DataFrame version of
     team win percentages.
     """
 
-    results = team_win_percentages(db)
+    results = team_win_percentages(db, season)
 
     return pd.DataFrame(
         results,
@@ -229,9 +280,10 @@ from app.services.team_stats_service import (
 def get_team_summary(
     db,
     team_name,
+    season
 ):
 
-    stats = build_team_stats(db)
+    stats = build_team_stats(db, season)
 
     if team_name not in stats:
         return {
@@ -290,12 +342,16 @@ def get_all_teams(db):
 def get_team_game_history(
     db,
     team_name,
+    season=None
 ):
     """
     Historical scoring trend.
     """
 
-    games = db.query(Game).all()
+    query = db.query(Game)
+    if season is not None:
+        query = query.filter(Game.season == season)
+    games = query.all()
 
     history = []
 
@@ -334,6 +390,7 @@ def compare_teams(
     db,
     team_a,
     team_b,
+    season=None
 ):
     """
     Compare two teams.
@@ -342,11 +399,13 @@ def compare_teams(
     team_a_stats = get_team_summary(
         db,
         team_a,
+        season
     )
 
     team_b_stats = get_team_summary(
         db,
         team_b,
+        season
     )
 
     return {

@@ -30,6 +30,7 @@ layout = dbc.Container(
 
                     html.H5(
                         f"NFL Season {CURRENT_SEASON} — Week {CURRENT_WEEK}",
+                        id="season-header",
                         className="text-center text-muted"
                     ),
 
@@ -38,6 +39,41 @@ layout = dbc.Container(
         ),
 
         html.Hr(),
+
+        dbc.Row(
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.Div(
+                                [
+                                    html.Div("Season", className="fw-semibold mb-2 text-muted"),
+                                    dcc.Dropdown(
+                                        id="season-dropdown",
+                                        placeholder="Select Season",
+                                        options=[],
+                                        value=None,
+                                        clearable=False,
+                                        searchable=False,
+                                        className="season-dropdown",
+                                    ),
+                                ],
+                                style={"maxWidth": "240px", "margin": "0 auto"},
+                            ),
+                        ],
+                        className="py-3",
+                    ),
+                    className="border-0 shadow-sm rounded-3",
+                ),
+                xs=12,
+                sm=8,
+                md=5,
+                lg=4,
+                xl=3,
+            ),
+            justify="center",
+            className="mb-4",
+        ),
 
         # ==================================================
         # KPI CARDS
@@ -325,6 +361,11 @@ layout = dbc.Container(
         html.H2(
             "⚔️ Head-to-Head Comparison"
         ),
+        html.Div(
+            id="matchup-banner",
+            className="mb-4"
+        ),
+
 
         dbc.Row(
 

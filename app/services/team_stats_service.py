@@ -3,9 +3,12 @@ from collections import defaultdict
 from app.database.models import Game
 
 
-def build_team_stats(db):
+def build_team_stats(db, season=None):
 
-    games = db.query(Game).all()
+    query = db.query(Game)
+    if season is not None:
+        query = query.filter(Game.season == season)
+    games = query.all()
 
     stats = defaultdict(
         lambda: {

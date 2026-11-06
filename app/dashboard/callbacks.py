@@ -45,18 +45,24 @@ from app.services.analytics_service import (
     get_team_summary,
     get_team_game_history,
     compare_teams,
+    get_available_seasons,
 )
 
 from app.ml.predictor import (
     predict_game,
 )
+from app.utils.nfl import (
+    get_current_nfl_season,
+    get_current_nfl_week,
+)
 
 
 @app.callback(
     Output("team-card", "style"),
-    Input("team-dropdown", "value")
+    Input("team-dropdown", "value"),
+    Input("season-dropdown","value"),
 )
-def update_team_theme(team):
+def update_team_theme(team, season):
 
     if not team:
         return {}
@@ -70,45 +76,24 @@ def update_team_theme(team):
 def register_callbacks(app):
 
     @app.callback(
-        [
-            Output("games-card", "children"),
-            Output("teams-card", "children"),
-            Output("ppg-card", "children"),
-            Output("home-card", "children"),
-        ],
-        Input("games-card", "id"),
-    )
-    def update_league_metrics(_):
-        db = SessionLocal()
-
-        try:
-            return (
-                total_games(db),
-                total_teams(db),
-                average_points_per_game(db),
-                f"{home_field_advantage(db)}%",
-            )
-        finally:
-            db.close()
-
-    @app.callback(
-        Output(
-            "top-scoring-chart",
-            "figure",
-        ),
-        Input(
-            "top-scoring-chart",
-            "id",
-        ),
-    )
-    def update_top_scoring_chart(_):
+    Output(
+        "top-scoring-chart",
+        "figure",
+    ),
+    Input(
+        "season-dropdown",
+        "value",
+    ),
+)
+    def update_top_scoring_chart(season):
 
         db = SessionLocal()
 
         try:
 
             df = top_scoring_dataframe(
-                db
+                db,
+                season,
             )
 
             print(df.head())
@@ -141,20 +126,19 @@ def register_callbacks(app):
             "figure",
         ),
         Input(
-            "win-percentage-chart",
-            "id",
+            "season-dropdown",
+            "value",
         ),
     )
-    def update_win_chart(_):
+    def update_win_chart(season):
 
         db = SessionLocal()
 
         try:
 
-            df = (
-                team_win_percentage_dataframe(
-                    db
-                )
+            df = team_win_percentage_dataframe(
+                db,
+                season,
             )
 
             df = df.head(10)
@@ -256,12 +240,13 @@ def register_callbacks(app):
                 "children",
             ),
         ],
-        Input(
-            "team-dropdown",
-            "value",
-        ),
+        [
+            Input("team-dropdown", "value"),
+            Input("season-dropdown", "value"),
+            
+        ],
     )
-    def update_team_cards(team):
+    def update_team_cards(team, season):
 
         if not team:
             return "-", "-", "-", "-", "-", "-", "-"
@@ -274,6 +259,7 @@ def register_callbacks(app):
                 get_team_summary(
                     db,
                     team,
+                    season
                 )
             )
 
@@ -290,17 +276,18 @@ def register_callbacks(app):
         finally:
             db.close()
 
+    # Update Team Trend Chart
     @app.callback(
         Output(
             "team-trend-chart",
             "figure",
         ),
-        Input(
-            "team-dropdown",
-            "value",
-        ),
+        [
+            Input("team-dropdown", "value"),
+            Input("season-dropdown", "value"),
+        ],
     )
-    def update_team_chart(team):
+    def update_team_chart(team, season):
 
         fig = px.line()
 
@@ -315,6 +302,7 @@ def register_callbacks(app):
                 get_team_game_history(
                     db,
                     team,
+                    season
                 )
             )
 
@@ -334,26 +322,64 @@ def register_callbacks(app):
         finally:
             db.close()
 
+
+    @app.callback(
+    [
+        Output("games-card", "children"),
+        Output("teams-card", "children"),
+        Output("ppg-card", "children"),
+        Output("home-card", "children"),
+    ],
+    Input(
+        "season-dropdown",
+        "value",
+    ),
+)
+    
+    def update_metrics(season):
+
+        db = SessionLocal()
+
+        try:
+
+            return (
+
+                total_games(
+                    db,
+                    season,
+                ),
+
+                total_teams(
+                    db,
+                    season,
+                ),
+
+                average_points_per_game(
+                    db,
+                    season,
+                ),
+
+                f"{home_field_advantage(db, season)}%",
+
+            )
+
+        finally:
+
+            db.close()
+
+    # Update Team Comparison Table
     @app.callback(
         Output(
             "comparison-table",
             "children",
         ),
         [
-            Input(
-                "team-a-dropdown",
-                "value",
-            ),
-            Input(
-                "team-b-dropdown",
-                "value",
-            ),
+            Input("team-a-dropdown", "value"),
+            Input("team-b-dropdown", "value"),
+            Input("season-dropdown", "value"),
         ],
     )
-    def update_comparison(
-        team_a,
-        team_b,
-    ):
+    def update_comparison(team_a, team_b, season):
 
         if not team_a or not team_b:
             return "Select two teams"
@@ -367,6 +393,7 @@ def register_callbacks(app):
                     db,
                     team_a,
                     team_b,
+                    season,
                 )
             )
 
@@ -449,26 +476,19 @@ def register_callbacks(app):
         finally:
             db.close()
 
+# Update Prediction Output
     @app.callback(
         Output(
             "prediction-output",
             "children",
         ),
         [
-            Input(
-                "team-a-dropdown",
-                "value",
-            ),
-            Input(
-                "team-b-dropdown",
-                "value",
-            ),
+            Input("team-a-dropdown", "value"),
+            Input("team-b-dropdown", "value"),
+            Input("season-dropdown", "value"),
         ],
     )
-    def update_prediction(
-        team_a,
-        team_b,
-    ):
+    def update_prediction(team_a, team_b, season):
 
         if not team_a or not team_b:
             return "Select two teams."
@@ -481,6 +501,7 @@ def register_callbacks(app):
                 db,
                 team_a,
                 team_b,
+                season,
             )
 
             if prediction.get("error"):
@@ -564,7 +585,7 @@ def register_callbacks(app):
         finally:
             db.close()
 
-
+# Update Model Metrics
 @app.callback(
     [
         Output("model-accuracy", "children"),
@@ -652,6 +673,7 @@ def update_roc_curve(_):
 
     return fig
 
+# Update Feature Importance Chart
 @app.callback(
     Output(
         "feature-importance-chart",
@@ -760,6 +782,55 @@ def update_matchup_banner(team_a, team_b):
         )
     )
 
+
+# Update the season header when the user selects a season
+@app.callback(
+    Output("season-header", "children"),
+    Input("season-dropdown", "value"),
+)
+def update_season_header(season):
+    current_season = get_current_nfl_season()
+
+    if season is None:
+        return f"NFL Season {current_season} — Week {get_current_nfl_week()}"
+
+    if int(season) == current_season:
+        return f"NFL Season {season} — Week {get_current_nfl_week()}"
+
+    return f"NFL Season {season}"
+
+
+# Update Season Dropdown
+@app.callback(
+    [
+        Output("season-dropdown", "options"),
+        Output("season-dropdown", "value"),
+    ],
+    Input("season-dropdown", "id")
+)
+def populate_seasons(_):
+
+    db = SessionLocal()
+
+    try:
+
+        seasons = get_available_seasons(db)
+
+        options = [
+            {
+                "label": str(season),
+                "value": season,
+            }
+            for season in seasons
+        ]
+        return options, (max(seasons) if seasons else None)
+
+    finally:
+
+        db.close()
+
+
+
 # Update Prediction Explanation
 @app.callback(
     Output(
@@ -767,20 +838,12 @@ def update_matchup_banner(team_a, team_b):
         "children",
     ),
     [
-        Input(
-            "team-a-dropdown",
-            "value",
-        ),
-        Input(
-            "team-b-dropdown",
-            "value",
-        ),
+        Input("team-a-dropdown", "value"),
+        Input("team-b-dropdown", "value"),
+        Input("season-dropdown", "value"),
     ],
 )
-def update_prediction_explanation(
-    team_a,
-    team_b,
-):
+def update_prediction_explanation(team_a, team_b, season):
 
     if not team_a or not team_b:
         return ""
@@ -793,6 +856,7 @@ def update_prediction_explanation(
             db,
             team_a,
             team_b,
+            season,
         )
 
         if prediction.get("error"):
@@ -898,3 +962,6 @@ def update_prediction_explanation(
 
     finally:
         db.close()
+
+
+        

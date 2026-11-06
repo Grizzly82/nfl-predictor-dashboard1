@@ -18,12 +18,13 @@ class Game(Base):
 
     id = Column(Integer, primary_key=True)
 
-    #added external_game_id column to store the unique identifier for each game
+    # added external_game_id column to store the unique ESPN identifier
     external_game_id = Column(String, unique=True)
 
-    game_date = Column(Date)
-
-    season = Column(Integer)
+    game_date = Column(
+        Date,
+        index=True,
+    )
 
     week = Column(Integer)
 
@@ -34,12 +35,6 @@ class Game(Base):
 
     away_team = Column(
         String,
-        index=True,
-    )
-
-
-    game_date = Column(
-        Date,
         index=True,
     )
 
