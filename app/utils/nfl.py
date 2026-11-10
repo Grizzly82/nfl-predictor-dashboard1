@@ -32,8 +32,7 @@ def get_current_nfl_week():
 
     try:
         response = requests.get(
-            "https://site.api.espn.com/apis/site/v2/"
-            "sports/football/nfl/scoreboard",
+            "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
             timeout=5,
         )
         response.raise_for_status()

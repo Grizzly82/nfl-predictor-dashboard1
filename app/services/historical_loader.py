@@ -21,6 +21,7 @@ def load_week(season: int, week: int):
 
     db = SessionLocal()
     inserted = 0
+    repaired = 0
     skipped = 0
 
     try:
@@ -41,6 +42,13 @@ def load_week(season: int, week: int):
                 Game.external_game_id == external_game_id
             ).first()
             if existing:
+                if existing.season is None or existing.week is None:
+                    game_data = transform_game(event, season=season, week=week)
+                    for field, value in game_data.items():
+                        setattr(existing, field, value)
+                    repaired += 1
+                    continue
+
                 skipped += 1
                 continue
 
@@ -49,7 +57,10 @@ def load_week(season: int, week: int):
             inserted += 1
 
         db.commit()
-        print(f"Inserted {inserted} games | Skipped {skipped} duplicates")
+        print(
+            f"Inserted {inserted} games | Repaired {repaired} incomplete "
+            f"records | Skipped {skipped} duplicates"
+        )
         return inserted
     except Exception:
         db.rollback()
