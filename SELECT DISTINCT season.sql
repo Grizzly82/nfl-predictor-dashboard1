@@ -1,0 +1,2 @@
+SELECT DISTINCT season
+FROM games;

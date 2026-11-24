@@ -1,0 +1,3 @@
+SELECT *
+FROM games
+LIMIT 10;
