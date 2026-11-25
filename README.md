@@ -47,6 +47,7 @@ The model uses six historical features:
 - Away-team points allowed per game
 
 Tie games are excluded from binary model training so they are not incorrectly treated as losses for the away team.
+Training examples are limited to the newest season in the database; earlier seasons provide historical team statistics for the features.
 
 A trained model is stored at:
 

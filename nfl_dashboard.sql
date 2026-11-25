@@ -1,0 +1,4 @@
+SELECT *
+FROM games
+WHERE season = 2026
+LIMIT 10;

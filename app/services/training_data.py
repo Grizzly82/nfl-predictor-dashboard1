@@ -1,9 +1,14 @@
 import pandas as pd
+from sqlalchemy import func
 
 from app.database.models import Game
 
 
 def build_training_dataframe(db):
+
+    latest_season = db.query(func.max(Game.season)).scalar()
+    if latest_season is None:
+        return pd.DataFrame()
 
     games = (
         db.query(Game)
@@ -50,7 +55,8 @@ def build_training_dataframe(db):
         # Skip teams with no history yet
 
         if (
-            home["games"] >= 3
+            game.season == latest_season
+            and home["games"] >= 3
             and away["games"] >= 3
         ):
 
